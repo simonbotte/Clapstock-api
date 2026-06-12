@@ -5,6 +5,8 @@
 /var/
 /vendor/
 
+.DS_Store
+
 /phpunit.xml
 /.phpunit.cache/
 

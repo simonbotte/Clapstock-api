@@ -11,6 +11,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/projects/{code}/items/{itemId}/photos')]
@@ -78,6 +79,32 @@ class PhotoController extends ApiController
         ]);
 
         return $this->json($data, JsonResponse::HTTP_CREATED);
+    }
+
+    #[Route('/{photoId}', methods: ['GET'])]
+    public function show(
+        string $code,
+        int $itemId,
+        int $photoId,
+        EntityManagerInterface $entityManager,
+        PhotoStorage $storage,
+    ): Response|JsonResponse {
+        $photo = $this->findPhoto($entityManager, $code, $itemId, $photoId);
+        if ($photo === null) {
+            return $this->notFound('Photo not found.');
+        }
+
+        try {
+            $content = $storage->download($photo->getStorageKey());
+        } catch (\Throwable) {
+            return $this->notFound('Photo file not found.');
+        }
+
+        return new Response($content, Response::HTTP_OK, [
+            'Content-Type' => $photo->getContentType(),
+            'Content-Length' => (string) strlen($content),
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
     }
 
     #[Route('/{photoId}', methods: ['DELETE'])]

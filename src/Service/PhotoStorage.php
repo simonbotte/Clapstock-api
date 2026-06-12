@@ -59,6 +59,18 @@ class PhotoStorage
         return $target;
     }
 
+    public function download(string $storageKey): string
+    {
+        $this->ensureBucketExists();
+
+        $result = $this->s3->getObject([
+            'Bucket' => $this->bucket,
+            'Key' => $storageKey,
+        ]);
+
+        return (string) $result['Body'];
+    }
+
     private function ensureBucketExists(): void
     {
         if ($this->bucketChecked) {

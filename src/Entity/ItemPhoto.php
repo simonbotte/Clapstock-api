@@ -47,6 +47,11 @@ class ItemPhoto
         return $this->id;
     }
 
+    public function getItem(): CatalogItem
+    {
+        return $this->item;
+    }
+
     public function getStorageKey(): string
     {
         return $this->storageKey;

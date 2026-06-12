@@ -54,9 +54,17 @@ class ProjectPresenter
     /** @return array<string, mixed> */
     public function presentPhoto(ItemPhoto $photo): array
     {
+        $item = $photo->getItem();
+
         return [
             'id' => $photo->getId(),
             'storageKey' => $photo->getStorageKey(),
+            'url' => sprintf(
+                '/api/projects/%s/items/%d/photos/%d',
+                rawurlencode($item->getProject()->getCode()),
+                $item->getId(),
+                $photo->getId(),
+            ),
             'position' => $photo->getPosition(),
             'contentType' => $photo->getContentType(),
             'size' => $photo->getSize(),

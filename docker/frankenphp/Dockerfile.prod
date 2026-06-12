@@ -1,6 +1,6 @@
 FROM dunglas/frankenphp:1-php8.4
 
-RUN install-php-extensions pdo_mysql curl simplexml xml
+RUN install-php-extensions pdo_mysql zip
 
 WORKDIR /app
 
@@ -14,4 +14,3 @@ ENV APP_ENV=prod \
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts \
     && mkdir -p var/cache var/log \
     && chown -R www-data:www-data var
-
