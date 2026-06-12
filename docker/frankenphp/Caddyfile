@@ -1,20 +1,39 @@
 {
-    {$CADDY_GLOBAL_OPTIONS}
+	{$CADDY_GLOBAL_OPTIONS}
+
+	frankenphp {
+		worker {
+			file /app/public/index.php
+		}
+	}
 }
 
 {$SERVER_NAME:localhost} {
-    log
+	log
 
-    mercure {
-        publisher_jwt {env.MERCURE_JWT_SECRET}
-        subscriber_jwt {env.MERCURE_JWT_SECRET}
-        anonymous
-        cors_origins *
-    }
+	root * /app/public
+	encode zstd br gzip
 
-    root * /app/public
-    encode zstd br gzip
-    php_server {
-        worker /app/public/index.php
-    }
+	handle /.well-known/mercure* {
+		mercure {
+			publisher_jwt {env.MERCURE_JWT_SECRET}
+			subscriber_jwt {env.MERCURE_JWT_SECRET}
+			anonymous
+			cors_origins *
+		}
+	}
+
+	handle {
+		@phpRoute {
+			not file {path}
+		}
+		rewrite @phpRoute /index.php
+
+		@frontController path /index.php
+		php @frontController
+
+		file_server {
+			hide *.php
+		}
+	}
 }
