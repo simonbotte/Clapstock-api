@@ -9,6 +9,11 @@ use App\Entity\Project;
 
 class ProjectPresenter
 {
+    public function __construct(
+        private readonly string $mercurePublicUrl,
+    ) {
+    }
+
     /** @return array<string, mixed> */
     public function present(Project $project): array
     {
@@ -16,10 +21,25 @@ class ProjectPresenter
             'id' => $project->getId(),
             'code' => $project->getCode(),
             'name' => $project->getName(),
+            'mercureUrl' => $this->mercurePublicUrl !== '' ? $this->mercurePublicUrl : null,
             'createdAt' => $project->getCreatedAt()->format(DATE_ATOM),
             'updatedAt' => $project->getUpdatedAt()->format(DATE_ATOM),
             'participants' => array_map(fn (Participant $participant): array => $this->presentParticipant($participant), $project->getParticipants()->toArray()),
             'items' => array_map(fn (CatalogItem $item): array => $this->presentItem($item), $project->getItems()->toArray()),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public function presentSummary(Project $project): array
+    {
+        return [
+            'id' => $project->getId(),
+            'code' => $project->getCode(),
+            'name' => $project->getName(),
+            'mercureUrl' => $this->mercurePublicUrl !== '' ? $this->mercurePublicUrl : null,
+            'updatedAt' => $project->getUpdatedAt()->format(DATE_ATOM),
+            'participantCount' => $project->getParticipants()->count(),
+            'itemCount' => $project->getItems()->count(),
         ];
     }
 
@@ -59,15 +79,28 @@ class ProjectPresenter
         return [
             'id' => $photo->getId(),
             'storageKey' => $photo->getStorageKey(),
+            'thumbnailStorageKey' => $photo->getThumbnailStorageKey(),
             'url' => sprintf(
                 '/api/projects/%s/items/%d/photos/%d',
                 rawurlencode($item->getProject()->getCode()),
                 $item->getId(),
                 $photo->getId(),
             ),
+            'thumbnailUrl' => sprintf(
+                '/api/projects/%s/items/%d/photos/%d/thumbnail',
+                rawurlencode($item->getProject()->getCode()),
+                $item->getId(),
+                $photo->getId(),
+            ),
             'position' => $photo->getPosition(),
             'contentType' => $photo->getContentType(),
+            'thumbnailContentType' => $photo->getThumbnailContentType(),
             'size' => $photo->getSize(),
+            'thumbnailSize' => $photo->getThumbnailSize(),
+            'width' => $photo->getWidth(),
+            'height' => $photo->getHeight(),
+            'thumbnailWidth' => $photo->getThumbnailWidth(),
+            'thumbnailHeight' => $photo->getThumbnailHeight(),
             'createdAt' => $photo->getCreatedAt()->format(DATE_ATOM),
         ];
     }

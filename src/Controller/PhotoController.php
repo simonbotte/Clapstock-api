@@ -56,7 +56,7 @@ class PhotoController extends ApiController
         }
 
         try {
-            $storageKey = $storage->upload($item->getProject()->getCode(), (int) $item->getId(), $file);
+            $storedPhoto = $storage->upload($item->getProject()->getCode(), (int) $item->getId(), $file);
         } catch (\Throwable) {
             return $this->json([
                 'error' => [
@@ -67,7 +67,20 @@ class PhotoController extends ApiController
         }
 
         $position = $item->getPhotos()->count() + 1;
-        $photo = new ItemPhoto($item, $storageKey, $position, $mimeType, $file->getSize() ?: 0);
+        $photo = new ItemPhoto(
+            $item,
+            $storedPhoto['storageKey'],
+            $storedPhoto['thumbnailStorageKey'],
+            $position,
+            $mimeType,
+            $storedPhoto['thumbnailContentType'],
+            $storedPhoto['size'],
+            $storedPhoto['thumbnailSize'],
+            $storedPhoto['width'],
+            $storedPhoto['height'],
+            $storedPhoto['thumbnailWidth'],
+            $storedPhoto['thumbnailHeight'],
+        );
         $item->addPhoto($photo);
         $entityManager->persist($photo);
         $entityManager->flush();
@@ -79,6 +92,32 @@ class PhotoController extends ApiController
         ]);
 
         return $this->json($data, JsonResponse::HTTP_CREATED);
+    }
+
+    #[Route('/{photoId}/thumbnail', methods: ['GET'])]
+    public function thumbnail(
+        string $code,
+        int $itemId,
+        int $photoId,
+        EntityManagerInterface $entityManager,
+        PhotoStorage $storage,
+    ): Response|JsonResponse {
+        $photo = $this->findPhoto($entityManager, $code, $itemId, $photoId);
+        if ($photo === null) {
+            return $this->notFound('Photo not found.');
+        }
+
+        try {
+            $content = $storage->download($photo->getThumbnailStorageKey());
+        } catch (\Throwable) {
+            return $this->notFound('Photo thumbnail not found.');
+        }
+
+        return new Response($content, Response::HTTP_OK, [
+            'Content-Type' => $photo->getThumbnailContentType(),
+            'Content-Length' => (string) strlen($content),
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
     }
 
     #[Route('/{photoId}', methods: ['GET'])]
@@ -121,10 +160,12 @@ class PhotoController extends ApiController
             return $this->notFound('Photo not found.');
         }
 
-        $storageKey = $photo->getStorageKey();
-        try {
-            $storage->delete($storageKey);
-        } catch (\Throwable) {
+        $storageKeys = [$photo->getStorageKey(), $photo->getThumbnailStorageKey()];
+        foreach ($storageKeys as $storageKey) {
+            try {
+                $storage->delete($storageKey);
+            } catch (\Throwable) {
+            }
         }
 
         $entityManager->remove($photo);
@@ -133,7 +174,7 @@ class PhotoController extends ApiController
         $publisher->publishProjectEvent(strtoupper($code), 'photo.deleted', [
             'itemId' => $itemId,
             'photoId' => $photoId,
-            'storageKey' => $storageKey,
+            'storageKeys' => $storageKeys,
         ]);
 
         return $this->json(null, JsonResponse::HTTP_NO_CONTENT);

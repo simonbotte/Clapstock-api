@@ -45,6 +45,28 @@ class ProjectApiTest extends ApiTestCase
         self::assertSame('Tournage A', $this->jsonResponse()['name']);
     }
 
+    public function testListProjectsByParticipantDevice(): void
+    {
+        $this->createProject();
+        $secondProject = $this->createProject();
+
+        $this->jsonRequest('POST', '/api/projects/join', [
+            'code' => $secondProject['code'],
+            'deviceId' => 'device-2',
+            'displayName' => 'Marie',
+        ]);
+        self::assertResponseIsSuccessful();
+
+        $this->client->request('GET', '/api/projects', ['deviceId' => 'device-1']);
+        self::assertResponseIsSuccessful();
+        self::assertCount(2, $this->jsonResponse());
+
+        $this->client->request('GET', '/api/projects', ['deviceId' => 'device-2']);
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $this->jsonResponse());
+        self::assertSame($secondProject['code'], $this->jsonResponse()[0]['code']);
+    }
+
     public function testCatalogItemCrudWithPrices(): void
     {
         $project = $this->createProject();
@@ -85,7 +107,20 @@ class ProjectApiTest extends ApiTestCase
         self::assertInstanceOf(CatalogItem::class, $catalogItem);
 
         for ($position = 1; $position <= 3; ++$position) {
-            $photo = new ItemPhoto($catalogItem, 'fake-'.$position.'.jpg', $position, 'image/jpeg', 100);
+            $photo = new ItemPhoto(
+                $catalogItem,
+                'fake-'.$position.'.jpg',
+                'fake-'.$position.'-thumb.jpg',
+                $position,
+                'image/jpeg',
+                'image/jpeg',
+                100,
+                50,
+                1200,
+                800,
+                600,
+                400,
+            );
             $catalogItem->addPhoto($photo);
             $this->entityManager->persist($photo);
         }

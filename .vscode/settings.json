@@ -1,0 +1,24 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "ssh": "Enabled",
+            "previewLimit": 50,
+            "server": "127.0.0.1",
+            "port": 3307,
+            "sshOptions": {
+                "port": 22,
+                "host": "51.91.96.196",
+                "username": "ubuntu",
+                "password": "wehKih-zowban-vabke8"
+            },
+            "driver": "MySQL",
+            "name": "Clapstock",
+            "database": "clapstock",
+            "username": "root"
+        }
+    ]
+}

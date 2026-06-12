@@ -102,7 +102,10 @@ class CatalogItemController extends ApiController
         }
 
         $project = $item->getProject();
-        $photoKeys = array_map(fn (ItemPhoto $photo): string => $photo->getStorageKey(), $item->getPhotos()->toArray());
+        $photoKeys = array_merge(...array_map(
+            fn (ItemPhoto $photo): array => [$photo->getStorageKey(), $photo->getThumbnailStorageKey()],
+            $item->getPhotos()->toArray()
+        ));
         foreach ($photoKeys as $photoKey) {
             try {
                 $storage->delete($photoKey);

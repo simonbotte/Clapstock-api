@@ -15,6 +15,33 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/api/projects')]
 class ProjectController extends ApiController
 {
+    #[Route('', methods: ['GET'])]
+    public function list(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        ProjectPresenter $presenter,
+    ): JsonResponse {
+        $deviceId = trim((string) $request->query->get('deviceId', ''));
+        if ($deviceId === '') {
+            return $this->validationError(new \InvalidArgumentException('deviceId is required.'));
+        }
+
+        $projects = $entityManager->createQueryBuilder()
+            ->select('project')
+            ->from(Project::class, 'project')
+            ->join('project.participants', 'participant')
+            ->andWhere('participant.deviceId = :deviceId')
+            ->setParameter('deviceId', $deviceId)
+            ->orderBy('project.updatedAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        return $this->json(array_map(
+            fn (Project $project): array => $presenter->presentSummary($project),
+            $projects
+        ));
+    }
+
     #[Route('', methods: ['POST'])]
     public function create(
         Request $request,
