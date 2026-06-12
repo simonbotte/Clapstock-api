@@ -1,0 +1,51 @@
+services:
+  database:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: clapstock
+      MYSQL_USER: clapstock
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p\"$${MYSQL_ROOT_PASSWORD}\""]
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    volumes:
+      - database_data:/var/lib/mysql:rw
+
+  php:
+    build:
+      context: .
+      dockerfile: docker/frankenphp/Dockerfile.prod
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      APP_ENV: prod
+      APP_SECRET: ${APP_SECRET:?Set APP_SECRET}
+      SERVER_NAME: ${SERVER_NAME:?Set SERVER_NAME}
+      DATABASE_URL: mysql://clapstock:${MYSQL_PASSWORD}@database:3306/clapstock?serverVersion=8.4.0&charset=utf8mb4
+      MERCURE_URL: https://${SERVER_NAME}/.well-known/mercure
+      MERCURE_PUBLIC_URL: https://${SERVER_NAME}/.well-known/mercure
+      MERCURE_JWT_SECRET: ${MERCURE_JWT_SECRET:?Set MERCURE_JWT_SECRET}
+      MERCURE_ENABLED: "1"
+      S3_ENDPOINT: ${S3_ENDPOINT:?Set S3_ENDPOINT}
+      S3_PUBLIC_ENDPOINT: ${S3_ENDPOINT:?Set S3_ENDPOINT}
+      S3_REGION: auto
+      S3_BUCKET: ${S3_BUCKET:?Set S3_BUCKET}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:?Set S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:?Set S3_SECRET_ACCESS_KEY}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  database_data:
+  caddy_data:
+  caddy_config:

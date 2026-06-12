@@ -1,0 +1,40 @@
+services:
+  database:
+    ports:
+      - "3306:3306"
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      PMA_HOST: database
+      PMA_PORT: 3306
+      PMA_USER: clapstock
+      PMA_PASSWORD: clapstock
+      UPLOAD_LIMIT: 64M
+    ports:
+      - "8080:80"
+
+  s3manager:
+    image: cloudlena/s3manager:latest
+    depends_on:
+      seaweedfs:
+        condition: service_started
+    environment:
+      1_NAME: SeaweedFS
+      1_ENDPOINT: seaweedfs:8333
+      1_REGION: eu-west-3
+      1_ACCESS_KEY_ID: test
+      1_SECRET_ACCESS_KEY: test
+      1_USE_SSL: "false"
+      1_SIGNATURE_TYPE: V4
+      ENDPOINT: seaweedfs:8333
+      REGION: eu-west-3
+      ACCESS_KEY_ID: test
+      SECRET_ACCESS_KEY: test
+      USE_SSL: "false"
+      SIGNATURE_TYPE: V4
+    ports:
+      - "8081:8080"

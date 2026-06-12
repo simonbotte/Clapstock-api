@@ -1,0 +1,20 @@
+{
+    {$CADDY_GLOBAL_OPTIONS}
+}
+
+{$SERVER_NAME:localhost} {
+    log
+
+    mercure {
+        publisher_jwt {env.MERCURE_JWT_SECRET}
+        subscriber_jwt {env.MERCURE_JWT_SECRET}
+        anonymous
+        cors_origins *
+    }
+
+    root * /app/public
+    encode zstd br gzip
+    php_server {
+        worker /app/public/index.php
+    }
+}

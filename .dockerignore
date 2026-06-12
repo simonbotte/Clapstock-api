@@ -1,0 +1,12 @@
+.git
+.phpunit.cache
+var
+vendor
+tests
+compose.override.yaml
+compose.prod.yaml
+.env.local
+.env.*.local
+.env.deploy
+phpunit.xml
+

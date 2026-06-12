@@ -1,0 +1,56 @@
+services:
+  database:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: clapstock
+      MYSQL_USER: clapstock
+      MYSQL_PASSWORD: clapstock
+      MYSQL_ROOT_PASSWORD: root
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p$$MYSQL_ROOT_PASSWORD"]
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    volumes:
+      - database_data:/var/lib/mysql:rw
+
+  php:
+    build:
+      context: .
+      dockerfile: docker/frankenphp/Dockerfile
+    depends_on:
+      database:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_started
+    environment:
+      SERVER_NAME: ":80"
+      DATABASE_URL: "mysql://clapstock:clapstock@database:3306/clapstock?serverVersion=8.4.0&charset=utf8mb4"
+      MERCURE_URL: "http://localhost/.well-known/mercure"
+      MERCURE_PUBLIC_URL: "http://localhost:8000/.well-known/mercure"
+      MERCURE_JWT_SECRET: "clapstock-mercure-dev-secret-change-me"
+      MERCURE_ENABLED: "1"
+      S3_ENDPOINT: "http://seaweedfs:8333"
+      S3_PUBLIC_ENDPOINT: "http://localhost:8333"
+      S3_REGION: "eu-west-3"
+      S3_BUCKET: "clapstock-local"
+      S3_ACCESS_KEY_ID: "test"
+      S3_SECRET_ACCESS_KEY: "test"
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/app
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    restart: unless-stopped
+    command: "server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json"
+    ports:
+      - "8333:8333"
+    volumes:
+      - seaweedfs_data:/data
+      - ./docker/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+
+volumes:
+  database_data:
+  seaweedfs_data:

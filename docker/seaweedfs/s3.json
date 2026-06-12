@@ -1,0 +1,23 @@
+{
+  "identities": [
+    {
+      "name": "clapstock",
+      "credentials": [
+        {
+          "accessKey": "test",
+          "secretKey": "test"
+        }
+      ],
+      "actions": [
+        "Admin",
+        "Read",
+        "Write",
+        "List",
+        "Tagging"
+      ],
+      "resources": [
+        "buckets/*"
+      ]
+    }
+  ]
+}
