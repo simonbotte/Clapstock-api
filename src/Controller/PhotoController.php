@@ -46,7 +46,11 @@ class PhotoController extends ApiController
             return $this->validationError(new \InvalidArgumentException('photo is required.'));
         }
 
-        if (!$file->isValid() || $file->getPathname() === '' || !is_readable($file->getPathname())) {
+        if (!$file->isValid()) {
+            return $this->validationError(new \InvalidArgumentException($this->uploadErrorMessage($file)));
+        }
+
+        if ($file->getPathname() === '' || !is_readable($file->getPathname())) {
             return $this->validationError(new \InvalidArgumentException('photo must be a readable uploaded file.'));
         }
 
@@ -209,5 +213,15 @@ class PhotoController extends ApiController
             ->setParameter('photoId', $photoId)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    private function uploadErrorMessage(UploadedFile $file): string
+    {
+        return match ($file->getError()) {
+            UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'photo is too large.',
+            UPLOAD_ERR_PARTIAL => 'photo was only partially uploaded.',
+            UPLOAD_ERR_NO_FILE => 'photo is required.',
+            default => 'photo upload is invalid.',
+        };
     }
 }
